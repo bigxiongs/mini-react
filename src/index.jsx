@@ -1,3 +1,5 @@
+/** @jsxFrag Pact.Fragment */
+/** @jsx Pact.createElement */
 import Pact from "../pact"
 import {
   useCallback,
@@ -11,7 +13,6 @@ import "./style.css"
 
 const CounterContext = createContext(0)
 
-/** @jsx Pact.createElement */
 function Counter() {
   const [state, setState] = Pact.useState(1)
   const increment = () => setState((c) => c + 1)
@@ -31,8 +32,8 @@ function Counter() {
   }
 
   return (
-    <div className="box">
-      <CounterContext.Provider value="sec1">
+    <>
+      <CounterContext.Provider value="1 useState & useMemo & useCallback">
         <Section>
           <button onClick={decrement}>-</button>
           <p>
@@ -41,23 +42,22 @@ function Counter() {
           <button onClick={increment}>+</button>
         </Section>
       </CounterContext.Provider>
-      <CounterContext.Provider value="sec2">
+      <CounterContext.Provider value="2 useEffect">
         <Section>
           <button onClick={callback}>log state</button>
         </Section>
       </CounterContext.Provider>
-      <CounterContext.Provider value="sec3">
+      <CounterContext.Provider value="3 useRef">
         <Section>
           <button onClick={incrementRef}>test ref</button>
           <input ref={inputRef} />
           <button onClick={focueInput}>Focus the input</button>
         </Section>
       </CounterContext.Provider>
-    </div>
+    </>
   )
 }
 
-/** @jsx Pact.createElement */
 function Section(props) {
   const contextValue = useContext(CounterContext)
   return (

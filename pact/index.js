@@ -10,6 +10,8 @@ import {
   useContext,
 } from "./pact"
 
+import {Fragment} from './components'
+
 export default {
   createElement,
   render,
@@ -20,4 +22,5 @@ export default {
   useRef,
   createContext,
   useContext,
+  Fragment
 }
