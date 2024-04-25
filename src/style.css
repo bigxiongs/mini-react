@@ -4,4 +4,13 @@
     align-items: center;
     gap: 10px;
     width: 100%;
+    flex-direction: column;
+}
+
+.section div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
 }

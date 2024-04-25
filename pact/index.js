@@ -1,11 +1,23 @@
-import { createElement, render, useCallback, useEffect, useMemo, useState, useRef } from "./pact"
+import {
+  createElement,
+  render,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  createContext,
+  useContext,
+} from "./pact"
 
-export default  {
+export default {
   createElement,
   render,
   useState,
   useEffect,
   useMemo,
   useCallback,
-  useRef
+  useRef,
+  createContext,
+  useContext,
 }

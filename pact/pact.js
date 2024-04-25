@@ -3,17 +3,15 @@ function createElement(type, props, ...children) {
     type,
     props: {
       ...props,
-      children: children.map(child =>
-        typeof child === "object"
-          ? child
-          : createTextElement(child)
+      children: children.map((child) =>
+        typeof child === "object" ? child : createTextElement(child)
       ),
     },
   }
 }
 
 function createTextElement(text) {
-  return createElement("TEXT_ELEMENT", {nodeValue: text})
+  return createElement("TEXT_ELEMENT", { nodeValue: text })
 }
 
 function createDom(fiber) {
@@ -27,11 +25,11 @@ function createDom(fiber) {
   return dom
 }
 
-const isEvent = key => key.startsWith("on")
-const isProperty = key => key !== "children" && !isEvent(key)
-const isNew = (prev, next) => key => prev[key] !== next[key]
-const isGone = (prev, next) => key => !(key in next)
-const isRef = key => key == "ref"
+const isEvent = (key) => key.startsWith("on")
+const isProperty = (key) => key !== "children" && !isEvent(key)
+const isNew = (prev, next) => (key) => prev[key] !== next[key]
+const isGone = (prev, next) => (key) => !(key in next)
+const isRef = (key) => key == "ref"
 
 // usecase 1: when create a new dom as the second tree, we need the fiber to sync it's props
 // usecase 2: when we conclues the effect list, we perform those effect through updates
@@ -39,8 +37,8 @@ function updateDom(dom, prevProps, nextProps) {
   //Remove old or changed event listeners
   Object.keys(prevProps)
     .filter(isEvent)
-    .filter(key => !(key in nextProps) || isNew(prevProps, nextProps)(key))
-    .forEach(name => {
+    .filter((key) => !(key in nextProps) || isNew(prevProps, nextProps)(key))
+    .forEach((name) => {
       const eventType = name.toLowerCase().substring(2)
       dom.removeEventListener(eventType, prevProps[name])
     })
@@ -49,27 +47,31 @@ function updateDom(dom, prevProps, nextProps) {
   Object.keys(prevProps)
     .filter(isProperty)
     .filter(isGone(prevProps, nextProps))
-    .forEach(name => {dom[name] = ""})
+    .forEach((name) => {
+      dom[name] = ""
+    })
 
   // Set new or changed properties
   Object.keys(nextProps)
     .filter(isProperty)
     .filter(isNew(prevProps, nextProps))
-    .forEach(name => {dom[name] = nextProps[name]})
+    .forEach((name) => {
+      dom[name] = nextProps[name]
+    })
 
   // Add event listeners
   Object.keys(nextProps)
     .filter(isEvent)
     .filter(isNew(prevProps, nextProps))
-    .forEach(name => {
+    .forEach((name) => {
       const eventType = name.toLowerCase().substring(2)
       dom.addEventListener(eventType, nextProps[name])
     })
-  
+
   //bind ref
   Object.keys(nextProps)
     .filter(isRef)
-    .forEach(name => {
+    .forEach((name) => {
       nextProps[name].current = dom
     })
 }
@@ -91,20 +93,10 @@ function commitWork(fiber) {
   }
   const domParent = domParentFiber.dom
 
-  if (
-    fiber.effectTag === "PLACEMENT" &&
-    fiber.dom != null
-  ) {
+  if (fiber.effectTag === "PLACEMENT" && fiber.dom != null) {
     domParent.appendChild(fiber.dom)
-  } else if (
-    fiber.effectTag === "UPDATE" &&
-    fiber.dom != null
-  ) {
-    updateDom(
-      fiber.dom,
-      fiber.alternate.props,
-      fiber.props
-    )
+  } else if (fiber.effectTag === "UPDATE" && fiber.dom != null) {
+    updateDom(fiber.dom, fiber.alternate.props, fiber.props)
   } else if (fiber.effectTag === "DELETION") {
     commitDeletion(fiber, domParent)
   }
@@ -155,10 +147,11 @@ function workLoop(deadline) {
 
 requestIdleCallback(workLoop)
 
+const isFunctionComponent = (fiber) => fiber.type instanceof Function
+const isContextProvider = (fiber) => "context" in fiber
 // wipRoot as fiber
 function performUnitOfWork(fiber) {
-  const isFunctionComponent = fiber.type instanceof Function
-  if (isFunctionComponent) {
+  if (isFunctionComponent(fiber)) {
     updateFunctionComponent(fiber)
   } else {
     updateHostComponent(fiber)
@@ -182,15 +175,14 @@ function updateFunctionComponent(fiber) {
   wipFiber = fiber
   hookIndex = 0
   wipFiber.hooks = []
-  const children = [fiber.type(fiber.props)] // execute hooks
+  const children = [fiber.type(fiber.props)].flat() // execute hooks
   reconcileChildren(fiber, children)
 }
 
 function updateHostComponent(fiber) {
-  if (!fiber.dom) 
-    fiber.dom = createDom(fiber)
+  if (!fiber.dom) fiber.dom = createDom(fiber)
 
-  reconcileChildren(fiber, fiber.props.children)
+  reconcileChildren(fiber, fiber.props.children.flat())
 }
 
 // creating fiber tree and add effects
@@ -203,17 +195,15 @@ function reconcileChildren(wipFiber, elements) {
     const element = elements[index]
     let newFiber = null
 
-    const sameType =
+    const sameType = oldFiber && element && element.type == oldFiber.type
+
+    const sameKey =
       oldFiber &&
       element &&
-      element.type == oldFiber.type
-    
-    const sameKey = 
-      oldFiber && element && 
-      element.props["key"] && 
-      oldFiber.props["key"] && 
+      element.props["key"] &&
+      oldFiber.props["key"] &&
       element.props["key"] == oldFiber.props["key"]
-    
+
     if (sameKey) {
       newFiber = {
         type: oldFiber.type,
@@ -222,8 +212,7 @@ function reconcileChildren(wipFiber, elements) {
         parent: wipFiber,
         alternate: oldFiber,
       }
-    }
-    else if (sameType) {
+    } else if (sameType) {
       newFiber = {
         type: oldFiber.type,
         props: element.props,
@@ -233,8 +222,7 @@ function reconcileChildren(wipFiber, elements) {
         effectTag: "UPDATE",
       }
       effectList.push(newFiber)
-    }
-    else if (element && !sameType) {
+    } else if (element && !sameType) {
       newFiber = {
         type: element.type,
         props: element.props,
@@ -244,8 +232,7 @@ function reconcileChildren(wipFiber, elements) {
         effectTag: "PLACEMENT",
       }
       effectList.push(newFiber)
-    }
-    else if (oldFiber && !sameType) {
+    } else if (oldFiber && !sameType) {
       oldFiber.effectTag = "DELETION"
       effectList.push(oldFiber)
     }
@@ -262,6 +249,12 @@ function reconcileChildren(wipFiber, elements) {
 
     prevSibling = newFiber
     index++
+
+    const context = {}
+    if (isContextProvider(wipFiber)) {
+      Object.assign(context, wipFiber.context)
+      newFiber.context = context
+    }
   }
 }
 
@@ -274,9 +267,11 @@ function useState(initial) {
   }
 
   const actions = oldHook ? oldHook.queue : []
-  actions.forEach(action => {hook.state = action(hook.state)})
+  actions.forEach((action) => {
+    hook.state = action(hook.state)
+  })
 
-  const setState = action => {
+  const setState = (action) => {
     hook.queue.push(action)
     wipRoot = {
       dom: currentRoot.dom,
@@ -315,7 +310,7 @@ function useReducer(reducer, initialState) {
 
   const hook = {
     state: oldHook ? oldHook.state : initialState,
-    dispatch: action => {
+    dispatch: (action) => {
       hook.state = reducer(hook.state, action)
       wipRoot = {
         dom: currentRoot.dom,
@@ -340,7 +335,9 @@ function useMemo(factory, deps) {
     value: oldHook ? oldHook.value : factory(),
   }
 
-  const hasChanged = hook.deps.some((dep, index) => dep !== (oldHook?.deps[index]))
+  const hasChanged = hook.deps.some(
+    (dep, index) => dep !== oldHook?.deps[index]
+  )
 
   if (hasChanged) hook.value = factory()
 
@@ -357,7 +354,9 @@ function useCallback(callback, deps) {
     deps: deps || [],
   }
 
-  const hasChanged = hook.deps.some((dep, index) => dep !== (oldHook?.deps[index]))
+  const hasChanged = hook.deps.some(
+    (dep, index) => dep !== oldHook?.deps[index]
+  )
 
   if (hasChanged) {
     hook.callback = callback
@@ -381,6 +380,46 @@ function useRef(initialValue) {
   return hook
 }
 
-export {createElement, render, useState, useEffect, useReducer, useMemo, useCallback, useRef}
+let ctxIndex = 0
+function createContext(defaultValue) {
+  const contextId = "__Ctx" + ctxIndex++
+  function Consumer(props, contextValue) {
+    return props.children(contextValue)
+  }
+  function Provider(props) {
+    const context = {
+      [contextId]: { _id: contextId, _defaultValue: props.value },
+    }
+    if ("context" in this) Object.assign(context, this.context)
+    this.context = context
+    return props.children
+  }
 
+  const context = {
+    _id: contextId,
+    _defaultValue: defaultValue,
+    Consumer,
+    Provider,
+  }
 
+  return context
+}
+
+function useContext(context) {
+  if (isContextProvider(wipFiber) && context._id in wipFiber.context)
+    return wipFiber.context[context._id]._defaultValue
+  return context._defaultValue
+}
+
+export {
+  createElement,
+  render,
+  useState,
+  useEffect,
+  useReducer,
+  useMemo,
+  useCallback,
+  useRef,
+  createContext,
+  useContext,
+}
