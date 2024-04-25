@@ -9,8 +9,17 @@ function Counter() {
   const decrement = () => setState(c => c - 1)
   const computed = useMemo(() => state * 2, [state])
   const callback = useCallback(() => console.log(state), [state])
+  let ref = useRef(0)
+  const inputRef = useRef(null)
 
   useEffect(() => console.log("effect"))
+  function incrementRef() {
+    ref.current = ref.current + 1;
+    alert('You clicked ' + ref.current + ' times!');
+  }
+  function focueInput() {
+    inputRef.current.focus();
+  }
 
   return (
     <div className="box">
@@ -18,6 +27,9 @@ function Counter() {
       <p>Count: {state} {computed}</p>
       <button onClick={increment}>+</button>
       <button onClick={callback}>log state</button>
+      <button onClick={incrementRef}>test ref</button>
+      <input ref={inputRef} />
+      <button onClick={focueInput}>Focus the input</button>
     </div>
   )
 }

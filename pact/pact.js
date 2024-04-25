@@ -31,6 +31,7 @@ const isEvent = key => key.startsWith("on")
 const isProperty = key => key !== "children" && !isEvent(key)
 const isNew = (prev, next) => key => prev[key] !== next[key]
 const isGone = (prev, next) => key => !(key in next)
+const isRef = key => key == "ref"
 
 // usecase 1: when create a new dom as the second tree, we need the fiber to sync it's props
 // usecase 2: when we conclues the effect list, we perform those effect through updates
@@ -64,10 +65,16 @@ function updateDom(dom, prevProps, nextProps) {
       const eventType = name.toLowerCase().substring(2)
       dom.addEventListener(eventType, nextProps[name])
     })
+  
+  //bind ref
+  Object.keys(nextProps)
+    .filter(isRef)
+    .forEach(name => {
+      nextProps[name].current = dom
+    })
 }
 
 function commitRoot() {
-  // deletions.forEach(commitWork)
   effectList.forEach(commitWork)
   commitWork(wipRoot.child)
   currentRoot = wipRoot
@@ -186,7 +193,7 @@ function updateHostComponent(fiber) {
   reconcileChildren(fiber, fiber.props.children)
 }
 
-// creating fiber tree and add deletion effects
+// creating fiber tree and add effects
 function reconcileChildren(wipFiber, elements) {
   let index = 0
   let oldFiber = wipFiber.alternate && wipFiber.alternate.child
@@ -361,7 +368,19 @@ function useCallback(callback, deps) {
   return hook.callback
 }
 
+function useRef(initialValue) {
+  const oldHook = wipFiber?.alternate?.hooks[hookIndex]
+  if (oldHook) {
+    wipFiber.hooks.push(oldHook)
+    hookIndex++
+    return oldHook
+  }
+  const hook = { current: initialValue }
+  wipFiber.hooks.push(hook)
+  hookIndex++
+  return hook
+}
 
-export {createElement, render, useState, useEffect, useReducer, useMemo, useCallback}
+export {createElement, render, useState, useEffect, useReducer, useMemo, useCallback, useRef}
 
 

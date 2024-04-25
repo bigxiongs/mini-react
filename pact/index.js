@@ -1,4 +1,4 @@
-import { createElement, render, useCallback, useEffect, useMemo, useState } from "./pact"
+import { createElement, render, useCallback, useEffect, useMemo, useState, useRef } from "./pact"
 
 export default  {
   createElement,
@@ -6,5 +6,6 @@ export default  {
   useState,
   useEffect,
   useMemo,
-  useCallback
+  useCallback,
+  useRef
 }
