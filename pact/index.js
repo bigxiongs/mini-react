@@ -8,6 +8,7 @@ import {
   useRef,
   createContext,
   useContext,
+  memo,
 } from "./pact"
 
 import {Fragment} from './components'
@@ -22,5 +23,6 @@ export default {
   useRef,
   createContext,
   useContext,
-  Fragment
+  Fragment,
+  memo
 }

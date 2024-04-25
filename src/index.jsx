@@ -8,6 +8,7 @@ import {
   useRef,
   createContext,
   useContext,
+  memo,
 } from "../pact/pact"
 import "./style.css"
 
@@ -15,6 +16,7 @@ const CounterContext = createContext(0)
 
 function Counter() {
   const [state, setState] = Pact.useState(1)
+  const [name, setName] = Pact.useState("I")
   const increment = () => setState((c) => c + 1)
   const decrement = () => setState((c) => c - 1)
   const computed = useMemo(() => state * 2, [state])
@@ -30,6 +32,7 @@ function Counter() {
   function focueInput() {
     inputRef.current.focus()
   }
+  const changeName = () => setName((c) => c + "m")
 
   return (
     <>
@@ -54,6 +57,13 @@ function Counter() {
           <button onClick={focueInput}>Focus the input</button>
         </Section>
       </CounterContext.Provider>
+      <CounterContext.Provider value="4 memo">
+        <Section>
+          <button onClick={changeName}>m</button>
+          <p>{name}</p>
+          <Memoized name="hi"/>
+        </Section>
+      </CounterContext.Provider>
     </>
   )
 }
@@ -67,6 +77,28 @@ function Section(props) {
     </div>
   )
 }
+
+function Wrapee(props) {
+  console.log("wrapee rendered")
+  return <p>Never rerender {props.name}</p>
+}
+const compare = (a, b) => {
+  if (typeof a != typeof b) return false
+  if (a == b) return true
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length == b.length && a.every((v, i) => compare(v, b[i]))
+  }
+  if (typeof a == 'function') return false
+  if (a == null && b == null) return true
+  if (a == null || b == null) return false
+  if (Object.keys(a).length != Object.keys(b).length) return false
+  for (let key in a) {
+    if (!(key in b)) return false
+    if (!compare(a[key], b[key])) return false
+  }
+  return true
+}
+const Memoized = memo(Wrapee, compare)
 
 const root = document.createElement("div")
 document.body.append(root)

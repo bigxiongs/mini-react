@@ -151,13 +151,15 @@ const isFunctionComponent = (fiber) => fiber.type instanceof Function
 const isContextProvider = (fiber) => "context" in fiber
 // wipRoot as fiber
 function performUnitOfWork(fiber) {
-  if (isFunctionComponent(fiber)) {
-    updateFunctionComponent(fiber)
-  } else {
-    updateHostComponent(fiber)
-  }
-  if (fiber.child) {
-    return fiber.child
+  if (!("memoized" in fiber)) {
+    if (isFunctionComponent(fiber)) {
+      updateFunctionComponent(fiber)
+    } else {
+      updateHostComponent(fiber)
+    }
+    if (fiber.child) {
+      return fiber.child
+    }
   }
   let nextFiber = fiber
   while (nextFiber) {
@@ -196,6 +198,7 @@ function reconcileChildren(wipFiber, elements) {
     let newFiber = null
 
     const sameType = oldFiber && element && element.type == oldFiber.type
+    const memoized = "compare" in element
 
     const sameKey =
       oldFiber &&
@@ -221,7 +224,6 @@ function reconcileChildren(wipFiber, elements) {
         alternate: oldFiber,
         effectTag: "UPDATE",
       }
-      effectList.push(newFiber)
     } else if (element && !sameType) {
       newFiber = {
         type: element.type,
@@ -231,12 +233,38 @@ function reconcileChildren(wipFiber, elements) {
         alternate: null,
         effectTag: "PLACEMENT",
       }
-      effectList.push(newFiber)
     } else if (oldFiber && !sameType) {
       oldFiber.effectTag = "DELETION"
       effectList.push(oldFiber)
     }
 
+    const context = {}
+    if (isContextProvider(wipFiber)) {
+      Object.assign(context, wipFiber.context)
+      newFiber.context = context
+    }
+
+    if (memoized && "effectTag" in newFiber && newFiber.effectTag == "UPDATE") {
+      let shouldUpdate = false
+
+      if (Object.keys(oldFiber.props).length != Object.keys(newFiber.props).length)
+        shouldUpdate = true
+
+      for (let key in oldFiber.props) {
+        if (shouldUpdate) break
+        if (!key in newFiber.props) shouldUpdate = true
+        else if (!element.compare(oldFiber.props[key], newFiber.props[key])) shouldUpdate = true
+      }
+
+      if (!shouldUpdate) {
+        delete newFiber.effectTag
+        newFiber.memoized = true
+      }
+    }
+
+    if ("effectTag" in newFiber) effectList.push(newFiber)
+
+    // move to next
     if (oldFiber) {
       oldFiber = oldFiber.sibling
     }
@@ -249,12 +277,6 @@ function reconcileChildren(wipFiber, elements) {
 
     prevSibling = newFiber
     index++
-
-    const context = {}
-    if (isContextProvider(wipFiber)) {
-      Object.assign(context, wipFiber.context)
-      newFiber.context = context
-    }
   }
 }
 
@@ -383,14 +405,18 @@ function useRef(initialValue) {
 let ctxIndex = 0
 function createContext(defaultValue) {
   const contextId = "__Ctx" + ctxIndex++
+
   function Consumer(props, contextValue) {
     return props.children(contextValue)
   }
+
   function Provider(props) {
     const context = {
       [contextId]: { _id: contextId, _defaultValue: props.value },
     }
+
     if ("context" in this) Object.assign(context, this.context)
+
     this.context = context
     return props.children
   }
@@ -408,7 +434,23 @@ function createContext(defaultValue) {
 function useContext(context) {
   if (isContextProvider(wipFiber) && context._id in wipFiber.context)
     return wipFiber.context[context._id]._defaultValue
+
   return context._defaultValue
+}
+
+const defaultCompare = (prop1, prop2) => {
+  return prop1 === prop2
+}
+
+function memo(component, compare = defaultCompare) {
+  function Memoized(props) {
+    return {
+      type: component,
+      props,
+      compare,
+    }
+  }
+  return Memoized
 }
 
 export {
@@ -422,4 +464,5 @@ export {
   useRef,
   createContext,
   useContext,
+  memo,
 }
