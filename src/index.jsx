@@ -52,7 +52,7 @@ function Counter() {
       <CounterContext.Provider value="4 memo & uesEffect with deps">
         <Section>
           <button onClick={changeName}>name</button>
-          <p>{name}</p>
+          <p style={{color: "green"}}>{name}</p>
           <Memoized name="hi"/>
         </Section>
       </CounterContext.Provider>
@@ -76,7 +76,7 @@ function Wrapee(props) {
 }
 const compare = (a, b) => {
   if (typeof a != typeof b) return false
-  if (a == b) return true
+  if (a === b) return true
   if (Array.isArray(a) && Array.isArray(b)) {
     return a.length == b.length && a.every((v, i) => compare(v, b[i]))
   }

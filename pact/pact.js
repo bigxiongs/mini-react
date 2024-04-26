@@ -31,6 +31,22 @@ const isNew = (prev, next) => (key) => prev[key] !== next[key]
 const isGone = (prev, next) => (key) => !(key in next)
 const isRef = (key) => key == "ref"
 
+const toCssText = (style) => {
+  style = JSON.parse(JSON.stringify(style))
+
+  Object.keys(style).forEach((key) => {
+    let newKey = key.replace(/[A-Z]/g, (match) => "-" + match.toLowerCase())
+    if (newKey !== key) {
+      style[newKey] = style[key]
+      delete style[key]
+    }
+  })
+
+  return Object.keys(style)
+    .map((property) => `${property}:${style[property]}; `)
+    .join("")
+}
+
 // usecase 1: when create a new dom as the second tree, we need the fiber to sync it's props
 // usecase 2: when we conclues the effect list, we perform those effect through updates
 function updateDom(dom, prevProps, nextProps) {
@@ -56,7 +72,11 @@ function updateDom(dom, prevProps, nextProps) {
     .filter(isProperty)
     .filter(isNew(prevProps, nextProps))
     .forEach((name) => {
-      dom[name] = nextProps[name]
+      if (name === "style") {
+        dom.style.cssText = toCssText(nextProps[name])
+      } else {
+        dom[name] = nextProps[name]
+      }
     })
 
   // Add event listeners
@@ -249,13 +269,16 @@ function reconcileChildren(wipFiber, elements) {
     if (memoized && "effectTag" in newFiber && newFiber.effectTag == "UPDATE") {
       let shouldUpdate = false
 
-      if (Object.keys(oldFiber.props).length != Object.keys(newFiber.props).length)
+      if (
+        Object.keys(oldFiber.props).length != Object.keys(newFiber.props).length
+      )
         shouldUpdate = true
 
       for (let key in oldFiber.props) {
         if (shouldUpdate) break
         if (!key in newFiber.props) shouldUpdate = true
-        else if (!element.compare(oldFiber.props[key], newFiber.props[key])) shouldUpdate = true
+        else if (!element.compare(oldFiber.props[key], newFiber.props[key]))
+          shouldUpdate = true
       }
 
       if (!shouldUpdate) {
@@ -314,9 +337,10 @@ function useState(initial) {
 function useEffect(callback, dependencies) {
   const oldHook = wipFiber?.alternate?.hooks[hookIndex]
 
-  const hasChanged = dependencies && oldHook
-    ? dependencies.some((dep, index) => dep !== oldHook.dependencies[index])
-    : true
+  const hasChanged =
+    dependencies && oldHook
+      ? dependencies.some((dep, index) => dep !== oldHook.dependencies[index])
+      : true
 
   const hook = {
     callback: hasChanged ? callback : oldHook.callback,
@@ -440,9 +464,7 @@ function useContext(context) {
   return context._defaultValue
 }
 
-const defaultCompare = (prop1, prop2) => {
-  return prop1 === prop2
-}
+const defaultCompare = (prop1, prop2) => prop1 === prop2
 
 function memo(component, compare = defaultCompare) {
   function Memoized(props) {
