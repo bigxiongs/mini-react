@@ -149,9 +149,10 @@ requestIdleCallback(workLoop)
 
 const isFunctionComponent = (fiber) => fiber.type instanceof Function
 const isContextProvider = (fiber) => "context" in fiber
+const isMemoizedFiber = (fiber) => "memoized" in fiber
 // wipRoot as fiber
 function performUnitOfWork(fiber) {
-  if (!("memoized" in fiber)) {
+  if (!isMemoizedFiber(fiber)) {
     if (isFunctionComponent(fiber)) {
       updateFunctionComponent(fiber)
     } else {
@@ -187,6 +188,7 @@ function updateHostComponent(fiber) {
   reconcileChildren(fiber, fiber.props.children.flat())
 }
 
+const isMemoElement = (element) => "compare" in element
 // creating fiber tree and add effects
 function reconcileChildren(wipFiber, elements) {
   let index = 0
@@ -198,7 +200,7 @@ function reconcileChildren(wipFiber, elements) {
     let newFiber = null
 
     const sameType = oldFiber && element && element.type == oldFiber.type
-    const memoized = "compare" in element
+    const memoized = isMemoElement(element)
 
     const sameKey =
       oldFiber &&
@@ -312,7 +314,7 @@ function useState(initial) {
 function useEffect(callback, dependencies) {
   const oldHook = wipFiber?.alternate?.hooks[hookIndex]
 
-  const hasChanged = dependencies
+  const hasChanged = dependencies && oldHook
     ? dependencies.some((dep, index) => dep !== oldHook.dependencies[index])
     : true
 

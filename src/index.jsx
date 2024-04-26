@@ -1,30 +1,22 @@
 /** @jsxFrag Pact.Fragment */
 /** @jsx Pact.createElement */
 import Pact from "../pact"
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  createContext,
-  useContext,
-  memo,
-} from "../pact/pact"
 import "./style.css"
 
-const CounterContext = createContext(0)
+const CounterContext = Pact.createContext(0)
 
 function Counter() {
   const [state, setState] = Pact.useState(1)
   const [name, setName] = Pact.useState("I")
   const increment = () => setState((c) => c + 1)
   const decrement = () => setState((c) => c - 1)
-  const computed = useMemo(() => state * 2, [state])
-  const callback = useCallback(() => console.log(state), [state])
-  let ref = useRef(0)
-  const inputRef = useRef(null)
+  const computed = Pact.useMemo(() => state * 2, [state])
+  const callback = Pact.useCallback(() => console.log(state), [state])
+  let ref = Pact.useRef(0)
+  const inputRef = Pact.useRef(null)
 
-  useEffect(() => console.log("effect"))
+  Pact.useEffect(() => console.log("effect without depends"))
+  Pact.useEffect(() => console.log("effect depends on name"), [name])
   function incrementRef() {
     ref.current = ref.current + 1
     alert("You clicked " + ref.current + " times!")
@@ -45,7 +37,7 @@ function Counter() {
           <button onClick={increment}>+</button>
         </Section>
       </CounterContext.Provider>
-      <CounterContext.Provider value="2 useEffect">
+      <CounterContext.Provider value="2 useEffect without deps">
         <Section>
           <button onClick={callback}>log state</button>
         </Section>
@@ -57,9 +49,9 @@ function Counter() {
           <button onClick={focueInput}>Focus the input</button>
         </Section>
       </CounterContext.Provider>
-      <CounterContext.Provider value="4 memo">
+      <CounterContext.Provider value="4 memo & uesEffect with deps">
         <Section>
-          <button onClick={changeName}>m</button>
+          <button onClick={changeName}>name</button>
           <p>{name}</p>
           <Memoized name="hi"/>
         </Section>
@@ -69,7 +61,7 @@ function Counter() {
 }
 
 function Section(props) {
-  const contextValue = useContext(CounterContext)
+  const contextValue = Pact.useContext(CounterContext)
   return (
     <div className="section">
       <h3>Section {contextValue}</h3>
@@ -98,8 +90,6 @@ const compare = (a, b) => {
   }
   return true
 }
-const Memoized = memo(Wrapee, compare)
+const Memoized = Pact.memo(Wrapee, compare)
 
-const root = document.createElement("div")
-document.body.append(root)
-Pact.render(<Counter />, root)
+Pact.render(<Counter />, document.body)
