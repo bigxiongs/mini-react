@@ -56,6 +56,11 @@ function Counter() {
           <Memoized name="hi"/>
         </Section>
       </CounterContext.Provider>
+      <CounterContext.Provider value="5 useReducer">
+        <Section>
+          <ReducerDemo />
+        </Section>
+      </CounterContext.Provider>
     </>
   )
 }
@@ -91,5 +96,25 @@ const compare = (a, b) => {
   return true
 }
 const Memoized = Pact.memo(Wrapee, compare)
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "mul": return state * action.value
+    case "div": return state / action.value
+    default: return state
+  }
+}
+function ReducerDemo(props) {
+  const [state, dispatch] = Pact.useReducer(reducer, 3)
+  const mul = () => dispatch({type: "mul", value: 2})
+  const div = () => dispatch({type: "div", value: 2})
+  return (
+    <>
+      <button onClick={mul}>*</button>
+      <p>{state}</p>
+      <button onClick={div}>/</button>
+    </>
+  )
+}
 
 Pact.render(<Counter />, document.body)
