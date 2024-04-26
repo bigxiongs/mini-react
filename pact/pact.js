@@ -1,3 +1,5 @@
+import { schedule, shouldYield } from "../scheduler/index.js"
+
 function createElement(type, props, ...children) {
   return {
     type,
@@ -143,6 +145,7 @@ function render(element, container) {
   }
   effectList = []
   nextUnitOfWork = wipRoot
+  schedule(workLoop)
 }
 
 // nextUnitOfWork are initiated to a newly created wipRoot
@@ -154,18 +157,29 @@ let wipRoot = null
 // list of effect for commit phase
 let effectList = null
 
-function workLoop(deadline) {
-  let shouldYield = false
-  while (nextUnitOfWork && !shouldYield) {
+// work loop with scheduler
+function workLoop() {
+  while (nextUnitOfWork && !shouldYield()) 
     nextUnitOfWork = performUnitOfWork(nextUnitOfWork)
-    shouldYield = deadline.timeRemaining() < 1
-  }
-  if (!nextUnitOfWork && wipRoot) commitRoot()
 
-  requestIdleCallback(workLoop)
+  if (nextUnitOfWork) return workLoop
+
+  commitRoot()
+  return null
 }
 
-requestIdleCallback(workLoop)
+// function workLoop(deadline) {
+//   let shouldYield = false
+//   while (nextUnitOfWork && !shouldYield) {
+//     nextUnitOfWork = performUnitOfWork(nextUnitOfWork)
+//     shouldYield = deadline.timeRemaining() < 1
+//   }
+//   if (!nextUnitOfWork && wipRoot) commitRoot()
+
+//   requestIdleCallback(workLoop)
+// }
+
+// requestIdleCallback(workLoop)
 
 const isFunctionComponent = (fiber) => fiber.type instanceof Function
 const isContextProvider = (fiber) => "context" in fiber
@@ -305,6 +319,17 @@ function reconcileChildren(wipFiber, elements) {
   }
 }
 
+const update = () => {
+  wipRoot = {
+    dom: currentRoot.dom,
+    props: currentRoot.props,
+    alternate: currentRoot,
+  }
+  nextUnitOfWork = wipRoot
+  effectList = []
+  schedule(workLoop)
+}
+
 function useState(initial) {
   const oldHook = wipFiber?.alternate?.hooks[hookIndex]
 
@@ -320,13 +345,7 @@ function useState(initial) {
 
   const setState = (action) => {
     hook.queue.push(action)
-    wipRoot = {
-      dom: currentRoot.dom,
-      props: currentRoot.props,
-      alternate: currentRoot,
-    }
-    nextUnitOfWork = wipRoot
-    effectList = []
+    update()
   }
 
   wipFiber.hooks.push(hook)
@@ -360,13 +379,7 @@ function useReducer(reducer, initialState) {
     state: oldHook ? oldHook.state : initialState,
     dispatch: (action) => {
       hook.state = reducer(hook.state, action)
-      wipRoot = {
-        dom: currentRoot.dom,
-        props: currentRoot.props,
-        alternate: currentRoot,
-      }
-      nextUnitOfWork = wipRoot
-      effectList = []
+      update()
     },
   }
 
