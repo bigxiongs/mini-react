@@ -2,9 +2,10 @@ const queue = []
 const threshold = 5
 const transitions = []
 let deadline = 0
+let work
 
-export const shouldYield = () => now() >= deadline
 const now = () => performance.now()
+export const shouldYield = () => now() >= deadline
 
 const peek = (queue) => queue[0]
 
@@ -26,19 +27,14 @@ export const schedule = (callback) => {
 
 const flush = () => {
   deadline = now() + threshold
-  let work = peek(queue)
-  while (work && !shouldYield()) {
-    const { callback } = work
-    work.callback = null
-    const next = callback()
-    if (next) {
-      work.callback = next
-    } else {
-      queue.shift()
-    }
-    work = peek(queue)
+  while ((work = peek(queue)) && !shouldYield()) {
+    work.callback = work.callback()
+    if (!work.callback) queue.shift()
   }
-  work && (translate = task(shouldYield())) && startTransition(flush)
+  if (work && work.callback != null) {
+    translate = task(shouldYield())
+    startTransition(flush)
+  }
 }
 
 export default {
