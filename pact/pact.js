@@ -145,7 +145,7 @@ function render(element, container) {
   }
   effectList = []
   nextUnitOfWork = wipRoot
-  task.canceled = true
+  task.canceled = false
   schedule((task = { callback: workLoop, canceled: false }))
 }
 
@@ -317,7 +317,7 @@ const update = () => {
   }
   nextUnitOfWork = wipRoot
   effectList = []
-  task.canceled = true
+  task.canceled = false
   schedule((task = { callback: workLoop, canceled: false }))
 }
 
