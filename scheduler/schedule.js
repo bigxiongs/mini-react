@@ -20,14 +20,15 @@ const startTransition = (cb) => {
   transitions.push(cb) && translate()
 }
 
-export const schedule = (callback) => {
-  queue.push({ callback })
+export const schedule = (task) => {
+  queue.push(task)
   startTransition(flush)
 }
 
 const flush = () => {
   deadline = now() + threshold
   while ((work = peek(queue)) && !shouldYield()) {
+    if (work.canceled) queue.shift()
     work.callback = work.callback()
     if (!work.callback) queue.shift()
   }

@@ -145,7 +145,8 @@ function render(element, container) {
   }
   effectList = []
   nextUnitOfWork = wipRoot
-  schedule(workLoop)
+  task.canceled = true
+  schedule((task = { callback: workLoop, canceled: false }))
 }
 
 // nextUnitOfWork are initiated to a newly created wipRoot
@@ -157,9 +158,11 @@ let wipRoot = null
 // list of effect for commit phase
 let effectList = null
 
+let task = { callback: null, canceled: true }
+
 // work loop with scheduler
 function workLoop() {
-  while (nextUnitOfWork && !shouldYield()) 
+  while (nextUnitOfWork && !shouldYield())
     nextUnitOfWork = performUnitOfWork(nextUnitOfWork)
 
   if (nextUnitOfWork) return workLoop
@@ -167,19 +170,6 @@ function workLoop() {
   commitRoot()
   return null
 }
-
-// function workLoop(deadline) {
-//   let shouldYield = false
-//   while (nextUnitOfWork && !shouldYield) {
-//     nextUnitOfWork = performUnitOfWork(nextUnitOfWork)
-//     shouldYield = deadline.timeRemaining() < 1
-//   }
-//   if (!nextUnitOfWork && wipRoot) commitRoot()
-
-//   requestIdleCallback(workLoop)
-// }
-
-// requestIdleCallback(workLoop)
 
 const isFunctionComponent = (fiber) => fiber.type instanceof Function
 const isContextProvider = (fiber) => "context" in fiber
@@ -327,7 +317,8 @@ const update = () => {
   }
   nextUnitOfWork = wipRoot
   effectList = []
-  schedule(workLoop)
+  task.canceled = true
+  schedule((task = { callback: workLoop, canceled: false }))
 }
 
 function useState(initial) {
@@ -441,9 +432,9 @@ function useRef(initialValue) {
   return hook
 }
 
-let ctxIndex = 0
+let contextIndex = 0
 function createContext(defaultValue) {
-  const contextId = "__Ctx" + ctxIndex++
+  const contextId = "__Ctx" + contextIndex++
 
   function Consumer(props, contextValue) {
     return props.children(contextValue)
