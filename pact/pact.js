@@ -322,6 +322,7 @@ const update = () => {
 }
 
 function useState(initial) {
+  initial = typeof initial == 'function' ? initial() : initial
   const oldHook = wipFiber?.alternate?.hooks[hookIndex]
 
   const hook = {
@@ -335,6 +336,7 @@ function useState(initial) {
   })
 
   const setState = (action) => {
+    action = typeof action == 'function' ? action : () => action
     hook.queue.push(action)
     update()
   }
