@@ -5,6 +5,7 @@ module.exports = {
   entry: './src/index.jsx',
   output: {
     path: path.resolve(__dirname, 'dist'),
+    filename: "bundle.js"
   },
   module: {
     rules: [
@@ -27,4 +28,5 @@ module.exports = {
     port: "3000",
   },
   mode: "development",
+  devtool: "source-map",
 };

@@ -1,5 +1,3 @@
-/** @jsxFrag Pact.Fragment */
-/** @jsx Pact.createElement */
 import Pact from "../pact"
 import "./style.css"
 
