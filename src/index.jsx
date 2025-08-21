@@ -15,6 +15,10 @@ function Counter() {
 
   Pact.useEffect(() => console.log("effect without depends"))
   Pact.useEffect(() => console.log("effect depends on name"), [name])
+  Pact.useEffect(() => {
+    console.log("effect depends on state")
+    return () => console.log("cleanup effect depends on state");
+  }, [state]);
   function incrementRef() {
     ref.current = ref.current + 1
     alert("You clicked " + ref.current + " times!")

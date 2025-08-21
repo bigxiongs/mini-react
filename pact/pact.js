@@ -98,9 +98,15 @@ function updateDom(dom, prevProps, nextProps) {
     })
 }
 
+let pendingEffects = [];
+let effectCleanups = [];
 function commitRoot() {
   effectList.forEach(commitWork)
   commitWork(wipRoot.child)
+  effectCleanups.forEach((cleanup) => cleanup());
+  effectCleanups = pendingEffects.map(effect => effect()).filter(val => typeof val === 'function');
+  pendingEffects = [];
+  // reset wipRoot and nextUnitOfWork
   currentRoot = wipRoot
   wipRoot = null
 }
@@ -359,7 +365,7 @@ function useEffect(callback, dependencies) {
     dependencies: hasChanged ? dependencies : oldHook.dependencies,
   }
 
-  if (hasChanged) hook.callback()
+  if (hasChanged) pendingEffects.push(hook.callback);
 
   wipFiber.hooks.push(hook)
   hookIndex++
